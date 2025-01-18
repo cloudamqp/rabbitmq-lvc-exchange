@@ -28,3 +28,5 @@ ERLANG_MK_COMMIT = rabbitmq-tmp
 
 include rabbitmq-components.mk
 include erlang.mk
+
+PROJECT_VERSION = v3.13.0
