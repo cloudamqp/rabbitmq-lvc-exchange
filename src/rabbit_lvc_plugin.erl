@@ -6,6 +6,7 @@
 -module(rabbit_lvc_plugin).
 
 -include("rabbit_lvc_plugin.hrl").
+-include_lib("khepri/include/khepri.hrl").
 
 -export([setup_schema/0, disable_plugin/0]).
 
@@ -20,6 +21,12 @@
 %% private
 
 setup_schema() ->
+    rabbit_khepri:handle_fallback(
+        #{mnesia => fun() -> setup_schema_in_mnesia() end,
+          khepri => fun() -> ok end}
+    ).
+
+setup_schema_in_mnesia() ->
     _ = mnesia:create_table(?LVC_TABLE,
                             [{attributes, record_info(fields, cached)},
                              {record_name, cached},
@@ -31,6 +38,12 @@ setup_schema() ->
 
 
 disable_plugin() ->
+    rabbit_khepri:handle_fallback(
+        #{mnesia => fun() -> disable_plugin_in_mnesia() end,
+          khepri => fun() -> ok end}
+    ).
+
+disable_plugin_in_mnesia() ->
     rabbit_registry:unregister(exchange, <<"x-lvc">>),
     _ = mnesia:delete_table(?LVC_TABLE),
     ok.
