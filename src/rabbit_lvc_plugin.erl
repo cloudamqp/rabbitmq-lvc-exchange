@@ -38,12 +38,8 @@ setup_schema_in_mnesia() ->
 
 
 disable_plugin() ->
-    rabbit_khepri:handle_fallback(
-        #{mnesia => fun() -> disable_plugin_in_mnesia() end,
-          khepri => fun() -> ok end}
-    ).
-
-disable_plugin_in_mnesia() ->
     rabbit_registry:unregister(exchange, <<"x-lvc">>),
-    _ = mnesia:delete_table(?LVC_TABLE),
-    ok.
+    rabbit_khepri:handle_fallback(
+        #{mnesia => fun() -> _ = mnesia:delete_table(?LVC_TABLE), ok end,
+          khepri => fun() -> _ = rabbit_khepri:delete([rabbit_exchange_type_lvc]), ok end}
+    ).
