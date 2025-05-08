@@ -26,14 +26,15 @@ description() ->
 
 serialise_events() -> false.
 
-route(Exchange, Msg, Opts) ->
-    rabbit_khepri:handle_fallback(
-      #{mnesia => fun() -> route_in_mnesia(Exchange, Msg, Opts) end,
-        khepri => fun() -> route_in_khepri(Exchange, Msg, Opts) end}
-    ).
-
-route_in_mnesia(#exchange{name = Name}, Msg, _Opts) ->
+route(#exchange{name = Name}, Msg, Opts) ->
     RKs = mc:routing_keys(Msg),
+    rabbit_khepri:handle_fallback(
+      #{mnesia => fun() -> cache_msg_in_mnesia(Name, Msg, Opts) end,
+        khepri => fun() -> cache_msg_in_khepri(Name, Msg, Opts) end}
+    ),
+    rabbit_router:match_routing_key(Name, RKs).
+
+cache_msg_in_mnesia(Name, Msg, _Opts) ->
     rabbit_mnesia:execute_mnesia_transaction(
       fun () ->
               [mnesia:write(?LVC_TABLE,
@@ -43,16 +44,15 @@ route_in_mnesia(#exchange{name = Name}, Msg, _Opts) ->
                             write) ||
                K <- RKs]
       end),
-    rabbit_router:match_routing_key(Name, RKs).
+    ok.
 
-route_in_khepri(#exchange{name = Name}, Msg, _Opts) ->
-    RKs = mc:routing_keys(Msg),
+cache_msg_in_khepri(Name, Msg, _Opts) ->
     [ rabbit_khepri:put(khepri_lvc_path(Name, RK),
                         #cached{key = #cachekey{exchange=Name,
                                                 routing_key=RK},
                                 content = Msg})
       || RK <- RKs ],
-    rabbit_router:match_routing_key(Name, RKs).
+    ok.
 
 validate(_X) -> ok.
 validate_binding(_X, _B) -> ok.
@@ -130,12 +130,13 @@ assert_args_equivalence(X, Args) ->
 -spec get_msg_from_cache(rabbit_types:exchange_name(),
                          rabbit_types:routing_key()) -> mc:state() | not_found.
 get_msg_from_cache(XName, RoutingKey) ->
-    rabbit_khepri:handle_fallback(
-      #{mnesia => fun() -> get_msg_from_cache_in_mnesia(XName, RoutingKey) end,
-        khepri => fun() -> get_msg_from_cache_in_khepri(XName, RoutingKey) end}
-    ).
+    Msg = rabbit_khepri:handle_fallback(
+      #{mnesia => fun() -> read_in_mnesia(XName, RoutingKey) end,
+        khepri => fun() -> read_in_khepri(XName, RoutingKey) end}
+    ),
+    mc:set_annotation(?ANN_ROUTING_KEYS, [RoutingKey], Msg).
 
-get_msg_from_cache_in_mnesia(XName, RoutingKey) ->
+read_in_mnesia(XName, RoutingKey) ->
     case mnesia:dirty_read(
            ?LVC_TABLE,
            #cachekey{exchange = XName,
@@ -143,13 +144,13 @@ get_msg_from_cache_in_mnesia(XName, RoutingKey) ->
         [] ->
             not_found;
         [#cached{content = Msg}] ->
-            mc:set_annotation(?ANN_ROUTING_KEYS, [RoutingKey], Msg)
+            Msg
     end.
 
-get_msg_from_cache_in_khepri(XName, RoutingKey) ->
+read_in_khepri(XName, RoutingKey) ->
     case rabbit_khepri:get(khepri_lvc_path(XName, RoutingKey)) of
         {ok, #cached{content = Msg}} ->
-            mc:set_annotation(?ANN_ROUTING_KEYS, [RoutingKey], Msg);
+            Msg;
         _ ->
             not_found
     end.
