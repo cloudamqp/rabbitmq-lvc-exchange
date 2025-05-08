@@ -128,11 +128,15 @@ assert_args_equivalence(X, Args) ->
 -spec get_msg_from_cache(rabbit_types:exchange_name(),
                          rabbit_types:routing_key()) -> mc:state() | not_found.
 get_msg_from_cache(XName, RoutingKey) ->
-    Msg = rabbit_khepri:handle_fallback(
+    case rabbit_khepri:handle_fallback(
       #{mnesia => fun() -> read_in_mnesia(XName, RoutingKey) end,
         khepri => fun() -> read_in_khepri(XName, RoutingKey) end}
-    ),
-    mc:set_annotation(?ANN_ROUTING_KEYS, [RoutingKey], Msg).
+    ) of
+        not_found ->
+            not_found;
+        Msg ->
+            mc:set_annotation(?ANN_ROUTING_KEYS, [RoutingKey], Msg)
+    end.
 
 read_in_mnesia(XName, RoutingKey) ->
     case mnesia:dirty_read(
