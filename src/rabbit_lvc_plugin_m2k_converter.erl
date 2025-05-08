@@ -32,7 +32,7 @@ init_copy_to_khepri(_StoreId, _MigrationId, _Tables) ->
       Ret :: {ok, NewState} | {error, Reason},
       NewState :: rabbit_db_m2k_converter:state(),
       Reason :: any().
-copy_to_khepri(?LVC_TABLE = Table, #cached{key = Key, content = Content},
+copy_to_khepri(?LVC_TABLE = Table, #cached{key = #cachekey{exchange = Key}, content = Content},
                State) ->
     ?LOG_DEBUG(
        "Mnesia->Khepri data copy: [~0p] key: ~0p",
