@@ -21,6 +21,8 @@
       Tables :: [mnesia_to_khepri:mnesia_table()],
       Ret :: {ok, Priv},
       Priv :: #?MODULE{}.
+%% @private
+
 init_copy_to_khepri(_StoreId, _MigrationId, _Tables) ->
     State = #?MODULE{},
     {ok, State}.
@@ -32,13 +34,15 @@ init_copy_to_khepri(_StoreId, _MigrationId, _Tables) ->
       Ret :: {ok, NewState} | {error, Reason},
       NewState :: rabbit_db_m2k_converter:state(),
       Reason :: any().
-copy_to_khepri(?LVC_TABLE = Table, #cached{key = #cachekey{exchange = Key}, content = Content},
+%% @private
+
+copy_to_khepri(?LVC_TABLE = Table, #cached{key = #cachekey{exchange = Key, routing_key = RK}, content = Content},
                State) ->
     ?LOG_DEBUG(
        "Mnesia->Khepri data copy: [~0p] key: ~0p",
        [Table, Key],
        #{domain => ?KMM_M2K_TABLE_COPY_LOG_DOMAIN}),
-    Path = rabbit_exchange_type_lvc:khepri_lvc_path(Key),
+    Path = rabbit_exchange_type_lvc:khepri_lvc_path(Key, RK),
     rabbit_db_m2k_converter:with_correlation_id(
       fun(CorrId) ->
               Extra = #{async => CorrId},

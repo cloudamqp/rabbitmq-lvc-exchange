@@ -13,10 +13,8 @@ dep_rabbit_common              = git_rmq-subfolder rabbitmq-common $(RABBITMQ_VE
 dep_rabbit                     = git_rmq-subfolder rabbitmq-server $(RABBITMQ_VERSION)
 dep_rabbitmq_ct_client_helpers = git_rmq-subfolder rabbitmq-ct-client-helpers $(RABBITMQ_VERSION)
 dep_rabbitmq_ct_helpers        = git_rmq-subfolder rabbitmq-ct-helpers $(RABBITMQ_VERSION)
-dep_khepri 					   = hex 0.8.0
-dep_khepri_mnesia_migration    = hex 0.1.1
 
-DEPS = rabbitmq_prelaunch rabbit_common rabbit khepri khepri_mnesia_migration
+DEPS = amqp10_common rabbitmq_prelaunch rabbit_common rabbit khepri khepri_mnesia_migration
 TEST_DEPS = rabbitmq_ct_helpers rabbitmq_ct_client_helpers amqp_client
 
 DEP_EARLY_PLUGINS = rabbit_common/mk/rabbitmq-early-plugin.mk

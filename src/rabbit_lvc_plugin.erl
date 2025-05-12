@@ -18,6 +18,9 @@
                     {requires, rabbit_registry},
                     {enables, recovery}]}).
 
+-rabbit_mnesia_tables_to_khepri_db(
+   [{?LVC_TABLE, rabbit_lvc_plugin_m2k_converter}]).
+
 %% private
 
 setup_schema() ->
