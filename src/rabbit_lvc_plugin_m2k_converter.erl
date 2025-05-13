@@ -66,12 +66,12 @@ copy_to_khepri(Table, Record, State) ->
       Reason :: any().
 %% @private
 
-delete_from_khepri(?LVC_TABLE = Table, Key, State) ->
+delete_from_khepri(?LVC_TABLE = Table, #cachekey{exchange = Key, routing_key = RK}, State) ->
     ?LOG_DEBUG(
        "Mnesia->Khepri data delete: [~0p] key: ~0p",
        [Table, Key],
        #{domain => ?KMM_M2K_TABLE_COPY_LOG_DOMAIN}),
-    Path = rabbit_exchange_type_lvc:khepri_lvc_path(Key),
+    Path = rabbit_exchange_type_lvc:khepri_lvc_path(Key, RK),
     rabbit_db_m2k_converter:with_correlation_id(
       fun(CorrId) ->
               Extra = #{async => CorrId},
