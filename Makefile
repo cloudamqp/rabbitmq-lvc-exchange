@@ -1,7 +1,7 @@
 PROJECT = rabbitmq_lvc_exchange
 PROJECT_DESCRIPTION = RabbitMQ Last Value Cache exchange
 
-RABBITMQ_VERSION ?= v4.2.x
+RABBITMQ_VERSION ?= 4.0.0
 current_rmq_ref = $(RABBITMQ_VERSION)
 
 define PROJECT_APP_EXTRA_KEYS
